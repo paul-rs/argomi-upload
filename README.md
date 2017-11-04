@@ -5,7 +5,7 @@ is triggered whenever files are uploaded to a monitored S3 Bucket
 
 ## Deploying using Cloudformation
 
-
+~~~~
 aws --region ap-northeast-1 cloudformation create-stack --stack-name argomi-upload \
 --template-body file://upload-argomi-data.yaml \
 --capabilities CAPABILITY_NAMED_IAM \
@@ -19,3 +19,4 @@ aws --region ap-northeast-1 cloudformation create-stack --stack-name argomi-uplo
              ParameterKey=InitializeLambdaS3Key,ParameterValue=<s3 key for lambda> \
              ParameterKey=ImportLambdaS3Key,ParameterValue=<s3 key for lambda> \
              ParameterKey=GetPositionsLambdaS3Key,ParameterValue=<s3 key for lambda>
+~~~~
