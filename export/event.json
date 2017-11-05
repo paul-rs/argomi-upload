@@ -1,0 +1,11 @@
+{
+  "s3_bucket": "argomi-uploads",
+  "s3_key": "transactions.csv",
+  "asset_manager_id": 127,
+  "import_type": "transactions",
+  "aborted": false,
+  "resume_index": 0,
+  "processed_files": [
+    "transactions.csv"
+  ]
+}

@@ -1,15 +1,15 @@
 region: ap-northeast-1
 
-function_name: argomi-upload-initialize
+function_name: argomi-upload-export
 handler: service.handler
-description: Initializes the upload state machine
+description: Exports the results into a CSV file
 runtime: python3.6
-role: lambda_execution
+role: lambda_deployment
 
 # S3 upload requires appropriate role with s3:PutObject permission
 # (ex. basic_s3_upload), a destination bucket, and the key prefix
 bucket_name: 'argomi-upload-deployment'
-s3_key_prefix: 'initialize-'
+s3_key_prefix: 'export-'
 
 # if access key and secret are left blank, boto will use the credentials
 # defined in the [default] section of ~/.aws/credentials.
@@ -17,13 +17,13 @@ s3_key_prefix: 'initialize-'
 # aws_secret_access_key:
 
 # dist_directory: dist
-timeout: 60
+# timeout: 15
 # memory_size: 512
 #
 
 # Experimental Environment variables
-# environment_variables:
+
 
 # Build options
 # build:
-#   source_directories: lib # a comma delimited list of directories in your project root that contains source to package.
+#   source_directories: vendor/Crypto # a comma delimited list of directories in your project root that contains source to package.

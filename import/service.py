@@ -205,5 +205,8 @@ def _extract_file(download_path, import_type):
                         for filename in os.listdir(extract_dir)
                         if filename.startswith(import_type)]
         return import_files
-
+    elif download_path.endswith('.csv'):
+        return [download_path] if name.startswith(import_type) else []
+    else:
+        raise ValueError('Unrecognized file type %s' % os.path.splitext(download_path)[1])
 
