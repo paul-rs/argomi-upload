@@ -7,17 +7,18 @@ is triggered whenever files are uploaded to a monitored S3 Bucket
 ## Deploying using Cloudformation
 
 ~~~~
-aws --region ap-northeast-1 cloudformation create-stack --stack-name argomi-upload \
---template-body file://upload-argomi-data.yaml \
---capabilities CAPABILITY_NAMED_IAM \
---parameters ParameterKey=AssetManagerId,ParameterValue=<your asset manager id> \
-             ParameterKey=Environment,ParameterValue=production \
-             ParameterKey=ArgomiUsername,ParameterValue=<your argomi email login> \
-             ParameterKey=ArgomiPassword,ParameterValue=<your argomi password> \
-             ParameterKey=BucketName,ParameterValue=<s3 bucket name to monitor> \
-             ParameterKey=DeploymentBucketName,ParameterValue=<s3 bucket name where to deploy lambda code> \
-             ParameterKey=ExecuteLambdaS3Key,ParameterValue=<s3 key for lambda> \
-             ParameterKey=InitializeLambdaS3Key,ParameterValue=<s3 key for lambda> \
-             ParameterKey=ImportLambdaS3Key,ParameterValue=<s3 key for lambda> \
-             ParameterKey=GetPositionsLambdaS3Key,ParameterValue=<s3 key for lambda>
+aws --region ap-northeast-1 cloudformation deploy --stack-name argomi-upload \
+    --template-file upload-argomi-data.yaml \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --parameter-overrides \
+    Environment=production  \
+    ArgomiUsername=<Argomi email/API login> \
+    ArgomiPassword=<Argomi user/ API password> \
+    UploadBucketName=<S3 Bucket name for Import files> \
+    OutputBucketName=<S3 Bucket name for Output files> \
+    DeploymentBucketName=<S3 Bucket name where lambda packages are deployed> \
+    ExecuteLambdaS3Key=<Execute Lambda zip package> \
+    InitializeLambdaS3Key=<Initialize Lambda zip package> \
+    ImportLambdaS3Key=<Import Lambda zip package> \
+    ExportLambdaS3Key=<Export Lambda zip package>
 ~~~~
