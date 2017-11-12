@@ -1,11 +1,14 @@
 {
   "s3_bucket": "argomi-uploads",
-  "s3_key": "transactions.csv",
-  "asset_manager_id": 127,
+  "s3_key": "data.zip",
   "import_type": "transactions",
+  "asset_manager_id": 269,
   "aborted": false,
   "resume_index": 0,
   "processed_files": [
+    "parties_organisations.csv",
+    "parties_individuals.csv",
+    "books.csv",
     "transactions.csv"
   ]
 }

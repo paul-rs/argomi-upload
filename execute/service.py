@@ -23,5 +23,6 @@ def handler(event, context):
 
     states_arn = os.environ['STATEMACHINEARN']
     client = boto3.client('stepfunctions')
-    return client.start_execution(stateMachineArn=states_arn, input=json.dumps(payload))
-
+    client.start_execution(stateMachineArn=states_arn,
+                           input=json.dumps(payload))
+    return payload

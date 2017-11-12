@@ -1,2 +1,3 @@
 amaasutils
 amaascore
+boto3

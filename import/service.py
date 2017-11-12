@@ -51,7 +51,8 @@ def handler(event, context):
         # download the data file from S3
         os.mkdir(scratch_dir)
         download_path = f'{scratch_dir}/{s3_key}'
-        logger.info('Downloading file %s from %s to %s', s3_key, s3_bucket, download_path)
+        logger.info('Downloading file %s from %s to %s',
+                    s3_key, s3_bucket, download_path)
         S3_CLIENT.download_file(s3_bucket, s3_key, download_path)
         import_files = _extract_file(download_path, import_type)
 
@@ -60,8 +61,8 @@ def handler(event, context):
             if filename in processed_files:
                 continue
             logger.info('Importing data from %s', filename)
-            aborted, count = _import(asset_manager_id, file, import_type, context, resume_index)
-
+            aborted, count = _import(asset_manager_id, file,
+                                     import_type, context, resume_index)
             if aborted:
                 resume_index = count
                 break
@@ -84,12 +85,18 @@ def _import_book(asset_manager_id, rowdata):
     rowdata = {to_snake_case(key): value for key, value in rowdata.items()}
     if not rowdata.get('book_id'):
         return
-    mapped_fields = [{mapped_field: rowdata.pop(field)} for field, mapped_field in BOOK_FIELD_MAPPINGS.items()]
+    mapped_fields = [{mapped_field: rowdata.pop(field)}
+                     for field, mapped_field in BOOK_FIELD_MAPPINGS.items()]
     [rowdata.update(field) for field in mapped_fields]
     book = Book(**rowdata)
     book_api = BooksInterface(environment=ENVIRONMENT)
-    existing_book = book_api.search(asset_manager_id=asset_manager_id, book_ids=[book.book_id])
-    book_api.new(book) if not existing_book else book_api.amend(book)
+    existing_book = book_api.search(asset_manager_id=asset_manager_id,
+                                    book_ids=[book.book_id])
+    if not existing_book:
+        book_api.new(book)
+    else:
+        book_api.amend(book)
+
     return book
 
 
@@ -97,15 +104,20 @@ def _import_party(asset_manager_id, rowdata):
     rowdata = {to_snake_case(key): value for key, value in rowdata.items()}
     if not rowdata.get('party_id'):
         return
-    party_type = next((p for p in PARTY_TYPES if p.__name__ == rowdata.get('party_type')), None)
+    party_type = next((p for p in PARTY_TYPES
+                       if p.__name__ == rowdata.get('party_type')), None)
     if not party_type:
         return
     party = party_type(**rowdata)
     parties_api = PartiesInterface(environment=ENVIRONMENT)
-    existing_party = parties_api.search(asset_manager_id=asset_manager_id, party_ids=[party.party_id])
-    parties_api.new(party) if not existing_party else parties_api.amend(party)
-    return party
+    existing_party = parties_api.search(asset_manager_id=asset_manager_id,
+                                        party_ids=[party.party_id])
+    if not existing_party:
+        parties_api.new(party)
+    else:
+        parties_api.amend(party)
 
+    return party
 
 def _import_transaction(asset_manager_id, rowdata):
     charge_columns = [c for c in rowdata.keys() if c.startswith(CHARGES_PREFIX)]
@@ -127,8 +139,9 @@ def _import_transaction(asset_manager_id, rowdata):
     if asset_type in ['ForeignExchangeSpot', 'ForeignExchangeForward']:
         underlying = asset_id
         # this should be handled by our SDK ideally
-        prefix, model = ('SPT', ForeignExchangeSpot) if asset_type == 'ForeignExchangeSpot' \
-                                                     else ('FWD', ForeignExchangeForward)
+        prefix, model = ('SPT', ForeignExchangeSpot) \
+                         if asset_type == 'ForeignExchangeSpot' \
+                         else ('FWD', ForeignExchangeForward)
         asset_id = f'{prefix}{asset_id}{settlement_date.strftime("%Y%m%d")}'
         rowdata['asset_id'] = asset_id
         params = {'asset_manager_id': asset_manager_id,
@@ -140,24 +153,33 @@ def _import_transaction(asset_manager_id, rowdata):
             params['fixing_date'] = rowdata.get('fixing_date')
             params['forward_rate'] = rowdata['price']
         asset = model(**params)
-        asset.references['CCY Pair'] = Reference(underlying, reference_primary=True)
+        asset.references['CCY Pair'] = Reference(underlying,
+                                                 reference_primary=True)
         asset_api = AssetsInterface(environment=ENVIRONMENT)
-        existing_asset = asset_api.search(asset_manager_id=asset_manager_id, asset_ids=[asset_id])
-        asset = asset_api.new(asset) if not existing_asset else asset_api.amend(asset)
+        existing_asset = asset_api.search(asset_manager_id=asset_manager_id,
+                                          asset_ids=[asset_id])
+        asset = asset_api.new(asset) if not existing_asset \
+                                     else asset_api.amend(asset)
 
     transaction = Transaction(**rowdata)
     transaction_api = TransactionsInterface(environment=ENVIRONMENT)
-    existing_transaction = transaction_api.search(asset_manager_id=asset_manager_id,
-                                                  transaction_ids=[rowdata['transaction_id']])
+    existing_transaction = transaction_api.search(
+        asset_manager_id=asset_manager_id,
+        transaction_ids=[rowdata['transaction_id']])
+
     for party_type, party_id in parties.items():
         transaction.parties[party_type] = TransactionParty(party_id)
     for charge_type, charge_value in charges.items():
-        transaction.charges[charge_type] = Charge(charge_value, rowdata['transaction_currency'])
+        transaction.charges[charge_type] = Charge(charge_value,
+                                                  rowdata['transaction_currency'])
     for rate_type, rate_value in rates.items():
         transaction.rates[rate_type] = Rate(rate_value)
-    transaction_api.new(transaction) if not existing_transaction else transaction_api.amend(transaction)
-    return transaction
+    if not existing_transaction:
+        transaction_api.new(transaction)
+    else:
+        transaction_api.amend(transaction)
 
+    return transaction
 
 def _import(asset_manager_id, filename, import_type, context, resume_index):
     import_funcs = {'parties': _import_party,
@@ -168,7 +190,7 @@ def _import(asset_manager_id, filename, import_type, context, resume_index):
         reader = csv.reader(csv_file)
         header = next(reader)
         for row in reader:
-            count +=1
+            count += 1
             # skip already processed row from previous execution
             if count <= resume_index:
                 continue
@@ -179,14 +201,15 @@ def _import(asset_manager_id, filename, import_type, context, resume_index):
                 if result:
                     logger.info('Updated record %s', result)
             except Exception:
-                logger.error('Failed to import row %s: %s', rowdata, traceback.format_exc())
+                logger.error('Failed to import row %s: %s',
+                             rowdata, traceback.format_exc())
                 raise
 
             # abort current execution before hitting timeout
-            if context is not None: # executing out of lambda (testing)
-                remaining_time = context.get_remaining_time_in_millis()
-                if remaining_time <= ABORT_THRESHOLD:
-                    return True, count
+            remaining_time = context.get_remaining_time_in_millis() if context else None
+            if (remaining_time is not None and
+                    remaining_time <= ABORT_THRESHOLD):
+                return True, count
     return False, count
 
 
@@ -208,5 +231,5 @@ def _extract_file(download_path, import_type):
     elif download_path.endswith('.csv'):
         return [download_path] if name.startswith(import_type) else []
     else:
-        raise ValueError('Unrecognized file type %s' % os.path.splitext(download_path)[1])
-
+        raise ValueError('Unrecognized file type %s' %
+                         os.path.splitext(download_path)[1])
